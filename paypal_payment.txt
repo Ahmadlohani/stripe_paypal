@@ -1,0 +1,54 @@
+								---PAYPAL CLIENT---
+import { PayPalButton } from "react-paypal-button-v2";
+
+useEffect(() => {
+        if (_id) {
+          paypalScript();
+        }
+}, [_id])
+
+const paypalScript = () => {
+      if (window.paypal) {
+        setScriptLoaded(true);
+        return false;
+      }
+      const script = document.createElement("script");
+      script.src = "";
+      script.type = "text/javascript";
+      script.async = true;
+      script.onload = () => setScriptLoaded(true);
+      document.body.appendChild(script);
+}
+<PayPalButton
+          amount={price}
+          // shippingPreference="NO_SHIPPING" // default is "GET_FROM_FILE"
+          onSuccess={ async (details, dt) => {
+            // alert("Transaction completed by " + details.payer.name.given_name);
+            // OPTIONAL: Call your server to save the transaction
+            const {data} = await axios.post("/paypal-transaction-complete", details);
+            if (data.success) {
+              router.push("/thankPage");
+            } else {
+              toast.error("Data to Database Failed");
+              router.push("/thankPage");
+            }
+          }}
+/>
+
+								---PAYPAL SERVER---
+
+export const orderCompletionData = async (req, res) => {
+    const {id, status, payer, purchase_units} = req.body;
+    const order_id = id;
+    const order = new Order({order_id, status, payer, purchase_units});
+    try {
+        const response = await order.save();
+        return res.json({
+            success: "Data Added Successfully"
+        });
+    } catch (error) {
+        return res.json({
+            error: "Error adding data to database"
+        });
+    }
+}
